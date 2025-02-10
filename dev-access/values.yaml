@@ -1,0 +1,7 @@
+users:
+  - name: akhil
+    awsArn: arn:aws:iam::188451452903:user/akhil
+  - name: anish
+    awsArn: arn:aws:iam::188451452903:user/anish
+  - name: bpradipta
+    awsArn: arn:aws:iam::188451452903:user/bpradipta

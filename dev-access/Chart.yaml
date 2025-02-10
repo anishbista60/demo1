@@ -1,0 +1,6 @@
+apiVersion: v2
+name: rbac-automation
+description: A Helm chart to manage Kubernetes RBAC with user-based namespaces
+type: application
+version: 0.1.0
+appVersion: "1.0"

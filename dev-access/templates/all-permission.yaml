@@ -1,0 +1,93 @@
+# Cluster-wide Role and RoleBinding (applies to all users)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: view-all-dev-cluster
+rules:
+  - apiGroups: ["*"]
+    resources: ["*"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: view-all-binding
+subjects:
+{{- /* Loop over all users and create an entry for each */ -}}
+{{- range .Values.users }}
+  - kind: User
+    name: {{ .awsArn | quote }}
+    apiGroup: rbac.authorization.k8s.io
+{{- end }}
+roleRef:
+  kind: ClusterRole
+  name: view-all-dev-cluster
+  apiGroup: rbac.authorization.k8s.io
+
+# Namespace-wide Role and RoleBinding for the 'dev' namespace
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: dev
+  name: pod-manager-role
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["pods/exec", "pods/log"]
+    verbs: ["get", "create"]
+  - apiGroups: ["apps"]
+    resources: ["deployments", "statefulsets"]
+    verbs: ["get", "list", "watch", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  namespace: dev
+  name: pod-manager-binding
+subjects:
+{{- range .Values.users }}
+  - kind: User
+    name: {{ .awsArn | quote }}
+    apiGroup: rbac.authorization.k8s.io
+{{- end }}
+roleRef:
+  kind: Role
+  name: pod-manager-role
+  apiGroup: rbac.authorization.k8s.io
+
+# Per-user namespaces, roles, and bindings grouped together
+{{- range .Values.users }}
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  # Using the user’s name (lowercased) to form the namespace name.
+  name: dev-{{ .name | lower }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: dev-{{ .name | lower }}
+  name: dev-admin-role
+rules:
+  - apiGroups: ["*"]
+    resources: ["*"]
+    verbs: ["*"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  namespace: dev-{{ .name | lower }}
+  name: dev-admin-binding
+subjects:
+  - kind: User
+    name: {{ .awsArn | quote }}
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: Role
+  name: dev-admin-role
+  apiGroup: rbac.authorization.k8s.io
+{{- end }}
